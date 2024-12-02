@@ -13,6 +13,7 @@ require('dotenv/config')
 
 const configureApp = app => {
   app.use(express.json())
+  console.log('corsOrigin :>> ', corsOrigin)
   app.use(
     cors({
       origin: corsOrigin,
@@ -48,14 +49,14 @@ const configureApp = app => {
     app.use(rateLimiter)
   }
 
-  app.use((req, res, next) => {
-    res.cookie('token', 'value', {
-      httpOnly: true,
-      secure: env === 'production',
-      sameSite: 'Strict',
-    })
-    next()
-  })
+  // app.use((req, res, next) => {
+  //   res.cookie('token', 'value', {
+  //     httpOnly: true,
+  //     secure: env === 'production',
+  //     sameSite: 'lax',
+  //   })
+  //   next()
+  // })
 
   app.use((err, req, res, next) => {
     logger.error(err.stack)

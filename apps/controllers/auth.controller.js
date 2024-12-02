@@ -5,7 +5,7 @@ const EmailService = require('~/services/email.service')
 const handleAsync = require('~/utils/handleAsync')
 const handleError = require('~/utils/handleError')
 const { TokenTypes } = require('~/config/enums')
-const { jwt } = require('~/config/config')
+const { jwt, env } = require('~/config/config')
 
 class AuthController {
   constructor(service) {
@@ -75,9 +75,15 @@ class AuthController {
       return res
         .cookie('accessToken', accessToken, {
           maxAge: jwt.accessExp * 1000,
+          httpOnly: true,
+          secure: env === 'production',
+          sameSite: 'lax', // Çapraz kaynak uyumluluğu için 'lax'
         })
         .cookie('refreshToken', response.token, {
           maxAge: jwt.refreshExp * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          secure: env === 'production',
+          sameSite: 'lax',
         })
         .status(200)
         .send({ success: true, user })
