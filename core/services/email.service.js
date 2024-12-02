@@ -1,37 +1,48 @@
 const nodemailer = require('nodemailer')
 const config = require('../config/config')
-
+const welcomeEmailTemplate = require('../config/email-templates/welcome')
+const verifyEmailTemplate = require('../config/email-templates/verify-email')
+const resetPasswordTemplate = require('../config/email-templates/reset-password')
+const handleAsync = require('../utils/handleAsync')
 class EmailService {
   constructor() {
     // Nodemailer transporter yapılandırması
-    this.transporter = nodemailer.createTransport({
-      host: config.email.smtp.host,
-      port: config.email.smtp.port,
-      secure: config.email.smtp.secure, // true for 465, false for other ports
-      auth: {
-        user: config.email.smtp.user, // SMTP kullanıcı adı
-        pass: config.email.smtp.pass, // SMTP şifresi
-      },
-    })
+    this.transporter = nodemailer.createTransport(config.email.smtp)
   }
 
-  // E-posta gönderim metodu
-  async sendEmail(to, subject, html) {
-    const mailOptions = {
-      from: config.email.from, // Gönderen adres
-      to, // Alıcı adres
-      subject, // Konu
-      html, // HTML içeriği
-    }
+  async sendWelcomeEmail(user) {
+    const htmlContent = welcomeEmailTemplate(user)
+    await this.transporter.sendMail({
+      from: config.email.from,
+      to: user.email,
+      subject: config.email.templates.welcomeEmail.subject,
+      html: htmlContent,
+    })
+  }
+  async sendVerificationEmail(user, token) {
+    const verificationUrl = `${config.appUrl}/verify-email?token=${token}`
 
-    try {
-      const info = await this.transporter.sendMail(mailOptions)
-      console.log('Email sent: %s', info.messageId)
-      return info
-    } catch (error) {
-      console.error('Error sending email:', error)
-      throw error
-    }
+    const htmlContent = verifyEmailTemplate(user, verificationUrl)
+    const [response, error] = await handleAsync(
+      this.transporter.sendMail({
+        from: config.email.from,
+        to: user.email,
+        subject: 'Email Verification',
+        html: htmlContent,
+      })
+    )
+    return [response, error]
+  }
+  async sendPasswordResetEmail(user, token) {
+    const resetUrl = `${config.app.url}/reset-password?token=${token}`
+
+    const htmlContent = resetPasswordTemplate(user, resetUrl)
+    await this.transporter.sendMail({
+      from: config.email.from,
+      to: user.email,
+      subject: config.email.templates.resetPassword.subject,
+      html: htmlContent,
+    })
   }
 }
 

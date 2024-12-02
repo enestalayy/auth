@@ -2,29 +2,39 @@ const Joi = require('joi')
 
 // Kullanıcı kayıt doğrulama
 const registerValidation = Joi.object({
-  email: Joi.string().email().required().messages({
-    'string.email': 'Geçerli bir email adresi girin.',
-    'any.required': 'Email alanı zorunludur.',
-  }),
-  password: Joi.string().min(8).required().messages({
-    'string.min': 'Şifre en az 8 karakter olmalıdır.',
-    'any.required': 'Şifre alanı zorunludur.',
-  }),
+  email: Joi.string().email().trim().lowercase().required(),
+  password: Joi.string().min(8).max(30).required(),
+  first_name: Joi.string()
+    .trim()
+    .min(2)
+    .max(50)
+    .lowercase()
+    .regex(/^[a-zçğöşü\s-]+$/)
+    .required(),
+  last_name: Joi.string()
+    .trim()
+    .min(2)
+    .max(50)
+    .lowercase()
+    .regex(/^[a-zçğöşü\s-]+$/)
+    .required(),
+})
+
+const verifyEmailValidation = Joi.object({
+  tokenId: Joi.string()
+    .length(24)
+    .pattern(/^[a-fA-F0-9]{24}$/)
+    .required(),
 })
 
 // Kullanıcı giriş doğrulama
 const loginValidation = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
-})
-
-// Token yenileme doğrulama
-const refreshTokensValidation = Joi.object({
-  refreshToken: Joi.string().required(),
+  email: Joi.string().email().trim().lowercase().required(),
+  password: Joi.string().min(8).max(30).required(),
 })
 
 module.exports = {
   registerValidation,
   loginValidation,
-  refreshTokensValidation,
+  verifyEmailValidation,
 }

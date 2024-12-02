@@ -1,4 +1,4 @@
-module.exports = (user) => `
+module.exports = user => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,10 +12,10 @@ module.exports = (user) => `
 <body>
   <div class="container">
     <h1>Welcome to Our Platform!</h1>
-    <p>Hello ${user.name},</p>
+    <p>Hello ${user.first_name},</p>
     <p>Thank you for joining our platform. We're excited to have you on board!</p>
     <p>If you have any questions, feel free to reply to this email.</p>
   </div>
 </body>
 </html>
-`;
+`

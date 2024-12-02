@@ -1,14 +1,13 @@
-require('module-alias/register')
 const express = require('express')
 const compression = require('compression')
 const cors = require('cors')
 const helmet = require('helmet')
-const rateLimiter = require('./utils/rateLimiter')
+const rateLimiter = require('~/utils/rateLimiter')
 const xss = require('xss-clean')
 const mongoSanitize = require('express-mongo-sanitize')
-const config = require('./config')
-const logger = require('./utils/logger')
+const logger = require('~/utils/logger')
 const cookieParser = require('cookie-parser')
+const { env, corsOrigin, jwt } = require('./config')
 
 require('dotenv/config')
 
@@ -16,9 +15,10 @@ const configureApp = app => {
   app.use(express.json())
   app.use(
     cors({
-      origin: config.corsOrigin,
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      origin: corsOrigin,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
     })
   )
   app.use(compression())
@@ -44,16 +44,15 @@ const configureApp = app => {
   app.use(mongoSanitize())
   app.use(cookieParser())
 
-  if (config.env === 'production') {
+  if (env === 'production') {
     app.use(rateLimiter)
   }
 
   app.use((req, res, next) => {
     res.cookie('token', 'value', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env === 'production',
       sameSite: 'Strict',
-      maxAge: tokens.access.expires * 1000,
     })
     next()
   })

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
-const bcrypt = require('bcryptjs')
-const { roles } = require('../utils/roles')
-
+const bcrypt = require('bcrypt')
+const { Roles } = require('../config/enums')
+const { default: status } = require('http-status')
 const userSchema = new mongoose.Schema(
   {
     email: {
@@ -11,10 +11,12 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    password: { type: String, required: true },
+    password: { type: String, required: true, select: false },
+    first_name: { type: String, required: true },
+    last_name: { type: String, required: true },
     role: {
       type: String,
-      enum: roles,
+      enum: Roles,
       default: 'USER',
     },
     isEmailVerified: { type: Boolean, default: false },
@@ -31,8 +33,23 @@ userSchema.pre('save', async function (next) {
   next()
 })
 
-userSchema.methods.isPasswordMatch = function (password) {
-  return bcrypt.compare(password, this.password)
+userSchema.statics.comparePasswordByEmail = async function (email, plainPassword) {
+  // Sadece hash'i çek
+  const user = await this.findOne({ email }).select('+password')
+
+  if (!user) {
+    return [null, status.NOT_FOUND]
+  }
+
+  // Şifreyi bcrypt ile karşılaştır
+  const isMatch = await bcrypt.compare(plainPassword, user.password)
+
+  if (!isMatch) {
+    return [null, status.BAD_REQUEST]
+  }
+  user.password = undefined
+
+  return [user, null]
 }
 
 module.exports = mongoose.model('User', userSchema)

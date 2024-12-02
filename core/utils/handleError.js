@@ -1,11 +1,9 @@
-const handleError = (error, next) => {
-  if (error instanceof Error) {
-    return next(error)
-  }
-  const err = new Error()
-  err.statusCode = error
+const { status } = require('http-status')
 
-  return new Error(error.message, error.statusCode, __filename)
+const handleError = (statusCode, next, message = null) => {
+  const error = new Error(message || status[statusCode])
+  error.statusCode = statusCode
+  return next(error)
 }
 
 module.exports = handleError

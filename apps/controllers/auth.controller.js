@@ -1,78 +1,130 @@
-const httpStatus = require('http-status')
-const userService = require('../../core/services/user.service')
-const tokenService = require('../../core/services/token.service')
-const handleAsync = require('../../core/utils/handleAsync')
+const { status } = require('http-status')
+const UserService = require('~/services/user.service')
+const TokenService = require('~/services/token.service')
+const EmailService = require('~/services/email.service')
+const handleAsync = require('~/utils/handleAsync')
+const handleError = require('~/utils/handleError')
+const { TokenTypes } = require('~/config/enums')
+const { jwt } = require('~/config/config')
 
-// Kullanıcı kayıt
-const register = async (req, res, next) => {
-  try {
-    const { email, password } = req.body
+class AuthController {
+  constructor(service) {
+    this.service = service
+    this.register = this.register.bind(this)
+  }
+  // Kullanıcı kayıt
+  register = async (req, res, next) => {
+    const { email } = req.body
+    console.log('ÇALIŞIYORUM', req)
+    const [existingUser, error] = await handleAsync(this.service.getOne({ email }))
+    if (error) return next(error)
 
-    // Kullanıcı mevcut mu kontrolü
-    const [existingUser, error] = handleAsync(this.service.getOne({ email }))
-    if (existingUser) {
-      const error = new Error()
-      error.status
-      return res.status(httpStatus.CONFLICT).json({ message: 'Bu email zaten kullanılıyor.' })
+    if (existingUser && !existingUser.isEmailVerified) {
+      return handleError(status.CONFLICT, next, 'Email is not verified')
+    }
+    if (existingUser && existingUser.isEmailVerified) {
+      return handleError(status.CONFLICT, next, 'Email is already in use')
     }
 
-    const user = handleAsync(this.service.create({ email, password }))
-    const tokens = await tokenService.generateAuthTokens(user)
+    const [user, userError] = await handleAsync(this.service.create(req.body))
+    if (userError) return next(userError)
 
-    return res.status(httpStatus.CREATED).send({ user, tokens })
-  } catch (error) {
-    next(error)
+    const [emailSent, emailError] = await TokenService.createAndSendEmailVerificationToken(user, next)
+    if (emailError) next(emailError)
+    console.log('emailSent :>> ', emailSent)
+    return res.status(status.CREATED).send({ message: 'Verification email sent.' })
   }
-}
 
-// Kullanıcı giriş
-const login = async (req, res, next) => {
-  try {
-    const { email, password } = req.body
+  sendVerifyEmail = async (req, res, next) => {
+    const { email } = req.body
+    const [user, error] = await handleAsync(this.getOne({ email }))
+    if (error) next(error)
+    if (!user) handleError(status.BAD_REQUEST, next)
+    const [emailSent, emailError] = await TokenService.createAndSendEmailVerificationToken(user, next)
+    if (emailError) next(emailError)
+    console.log('emailSent :>> ', emailSent)
+    return res.status(status.CREATED).send({ message: 'Verification email sent.' })
+  }
 
-    const user = await userService.getUserByEmail(email)
-    if (!user || !(await user.isPasswordMatch(password))) {
-      return res.status(httpStatus.UNAUTHORIZED).json({ message: 'Hatalı email veya şifre.' })
+  verifyEmail = async (req, res, next) => {
+    const { tokenId } = req.body
+
+    const [tokenDoc, tokenErr] = await TokenService.findAndDeleteToken(tokenId, TokenTypes.EMAIL_VERIFICATION)
+
+    if (tokenErr) {
+      return next(tokenErr)
     }
-
-    const tokens = await tokenService.generateAuthTokens(user)
-    return res.status(httpStatus.OK).send({ user, tokens })
-  } catch (error) {
-    next(error)
-  }
-}
-
-// Token yenileme
-const refreshTokens = async (req, res, next) => {
-  try {
-    const { refreshToken } = req.body
-
-    const tokens = await tokenService.refreshAuthTokens(refreshToken)
-    return res.status(httpStatus.OK).send(tokens)
-  } catch (error) {
-    next(error)
-  }
-}
-
-// Kullanıcı çıkış
-const logout = async (req, res, next) => {
-  try {
-    const refreshToken = req.cookies.refreshToken
-    if (!refreshToken) {
-      return res.status(httpStatus.BAD_REQUEST).json({ message: 'Çıkış yaparken bir hata oluştu.' })
+    if (!tokenDoc) {
+      return handleError(status.BAD_REQUEST, next)
     }
+    const [response, error] = await this.service.verifyUsersEmail(tokenDoc.userId)
+    if (error) next(error)
+    res.status(status.OK).send(response)
+  }
 
-    await tokenService.invalidateToken(refreshToken)
-    res.clearCookie('refreshToken')
-    res.status(httpStatus.NO_CONTENT).send()
-  } catch (error) {
-    next(error)
+  // Kullanıcı giriş
+  login = async (req, res, next) => {
+    try {
+      const [user, userError] = await this.service.checkUser(req.body, next)
+      if (userError) next(userError)
+      const { accessToken, refreshToken } = TokenService.generateAuthTokens(user._id)
+
+      const [response, error] = await TokenService.saveRefreshToken(user._id, refreshToken)
+      if (error) next(error)
+
+      return res
+        .cookie('accessToken', accessToken, {
+          maxAge: jwt.accessExp * 1000,
+        })
+        .cookie('refreshToken', response.token, {
+          maxAge: jwt.refreshExp * 24 * 60 * 60 * 1000,
+        })
+        .status(200)
+        .send({ success: true, user })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  // Token yenileme
+  refreshTokens = async (req, res, next) => {
+    try {
+      const { refreshToken } = req.cookie
+
+      const { newAccessToken, newRefreshToken } = TokenService.generateAuthTokens(req.user._id)
+
+      const [response, error] = await TokenService.findAndUpdateToken({ userId: req.user._id, token: refreshToken }, newRefreshToken)
+      if (error) next(error)
+      if (!response) handleError(status.UNAUTHORIZED, next)
+      return res
+        .cookie('accessToken', newAccessToken, {
+          maxAge: jwt.accessExp * 1000,
+        })
+        .cookie('refreshToken', response.token, {
+          maxAge: jwt.refreshExp * 24 * 60 * 60 * 1000,
+        })
+        .status(200)
+        .send({ success: true })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  // Kullanıcı çıkış
+  logout = async (req, res, next) => {
+    try {
+      const refreshToken = req.cookie.refreshToken
+      if (!refreshToken) {
+        return res.status(status.BAD_REQUEST).json({ message: 'Çıkış yaparken bir hata oluştu.' })
+      }
+
+      await TokenService.invalidateToken(refreshToken)
+      res.clearCookie('refreshToken')
+      res.status(status.NO_CONTENT).send()
+    } catch (error) {
+      next(error)
+    }
   }
 }
 
-module.exports = {
-  register,
-  login,
-  refreshTokens,
-  logout,
-}
+module.exports = new AuthController(UserService)

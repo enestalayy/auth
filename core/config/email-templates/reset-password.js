@@ -20,7 +20,7 @@ module.exports = (user, resetUrl) => `
 <body>
   <div class="container">
     <h1>Password Reset</h1>
-    <p>Hello ${user.name},</p>
+    <p>Hello ${user.first_name},</p>
     <p>You have requested to reset your password. Click the button below to set a new password:</p>
     <a href="${resetUrl}" class="button">Reset Password</a>
     <p>If you did not request a password reset, please ignore this email.</p>
@@ -28,4 +28,4 @@ module.exports = (user, resetUrl) => `
   </div>
 </body>
 </html>
-`;
+`

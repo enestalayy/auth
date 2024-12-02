@@ -3,13 +3,15 @@ dotenv.config()
 
 module.exports = {
   env: process.env.NODE_ENV || 'development',
-  port: process.env.PORT || 3000,
+  port: process.env.PORT || 8000,
   corsOrigin: process.env.ALLOWED_ORIGINS,
+  appUrl: process.env.APP_URL,
+  mongoDB_URI: process.env.MONGODB_CONNECTION_STRING,
+  apiKey: process.env.API_KEY,
   jwt: {
-    accessSecret: process.env.ACCESS_TOKEN_SECRET_KEY,
-    refreshSecret: process.env.REFRESH_TOKEN_SECRET_KEY,
-    accessExpirationMinutes: process.env.JWT_ACCESS_EXPIRATION_MINUTES || 30,
-    refreshExpirationDays: process.env.JWT_REFRESH_EXPIRATION_DAYS || 30,
+    secret: process.env.JWT_SECRET_KEY,
+    accessExp: 30,
+    refreshExp: 30,
   },
   email: {
     smtp: {

@@ -6,27 +6,35 @@ class BaseService {
   }
 
   async getById(id) {
-    return handleAsync(this.model.findById(id))
+    return this.model.findById(id)
   }
 
   async getOne(query) {
-    return handleAsync(this.model.findOne(query))
+    return this.model.findOne(query)
   }
 
   async create(data) {
-    return handleAsync(this.model.create(data))
+    return this.model.create(data)
   }
 
   async update(id, updateData) {
-    return handleAsync(this.model.findByIdAndUpdate(id, updateData, { new: true }))
+    return this.model.findByIdAndUpdate(id, updateData, { new: true })
   }
 
   async delete(id) {
-    return handleAsync(this.model.findByIdAndDelete(id))
+    return this.model.findByIdAndDelete(id)
+  }
+
+  async findOneAndUpdate(query, updateData, options = { new: true }) {
+    return this.model.findOneAndUpdate(query, updateData, options)
+  }
+
+  async deleteOne(query) {
+    return this.model.deleteOne(query)
   }
 
   async getAll(query = {}) {
-    return handleAsync(this.model.find(query))
+    return this.model.find(query)
   }
 }
 

@@ -20,7 +20,7 @@ module.exports = (user, verificationUrl) => `
 <body>
   <div class="container">
     <h1>Email Verification</h1>
-    <p>Hello ${user.name},</p>
+    <p>Hello ${user.first_name},</p>
     <p>Please verify your email address by clicking the button below:</p>
     <a href="${verificationUrl}" class="button">Verify Email</a>
     <p>If you did not create an account, please ignore this email.</p>
@@ -28,4 +28,4 @@ module.exports = (user, verificationUrl) => `
   </div>
 </body>
 </html>
-`;
+`
