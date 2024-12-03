@@ -8,9 +8,17 @@ const authenticate =
   (requiredRoles = []) =>
   async (req, res, next) => {
     try {
-      console.log('req.cookies :>> ', req.cookies)
-      const token = req.cookies.accessToken
-      console.log('token :>> ', token)
+      // Authorization başlığını kontrol et
+      const authHeader = req.headers.authorization
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(status.UNAUTHORIZED).json({ message: 'Unauthorized' })
+      }
+
+      // Bearer token'ı ayır
+      const token = authHeader.split(' ')[1]
+      if (!token) {
+        return res.status(status.UNAUTHORIZED).json({ message: 'Unauthorized' })
+      }
       const payload = jwt.verify(token, config.jwt.secret)
       const user = await getUserById(payload.sub)
 

@@ -74,7 +74,7 @@ class AuthController {
 
       return res
         .cookie('accessToken', accessToken, {
-          maxAge: jwt.accessExp * 1000,
+          maxAge: jwt.accessExp * 60 * 1000,
           httpOnly: true,
           secure: env === 'production',
           sameSite: 'None',
