@@ -72,17 +72,12 @@ class AuthController {
       const [response, error] = await TokenService.saveRefreshToken(user._id, refreshToken)
       if (error) next(error)
 
-      console.log('Access Token :>> ', accessToken)
-      console.log('Access maxAge :>> ', jwt.accessExp * 1000)
-      console.log('Access secure :>> ', env === 'production')
-      console.log('Refresh Token :>> ', response.token)
-      console.log('Refresh maxAge :>> ', jwt.refreshExp * 24 * 60 * 60 * 1000)
-      res
+      return res
         .cookie('accessToken', accessToken, {
           maxAge: jwt.accessExp * 1000,
           httpOnly: true,
           secure: env === 'production',
-          sameSite: 'None', // Çapraz kaynak uyumluluğu için 'None'
+          sameSite: 'None',
         })
         .cookie('refreshToken', response.token, {
           maxAge: jwt.refreshExp * 24 * 60 * 60 * 1000,
@@ -92,8 +87,6 @@ class AuthController {
         })
         .status(200)
         .send({ success: true, user })
-      console.log('res :>> ', res)
-      return
     } catch (error) {
       next(error)
     }

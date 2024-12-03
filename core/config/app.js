@@ -13,7 +13,6 @@ require('dotenv/config')
 
 const configureApp = app => {
   app.use(express.json())
-  console.log('corsOrigin :>> ', corsOrigin)
   app.use(
     cors({
       origin: corsOrigin,
