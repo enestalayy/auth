@@ -72,7 +72,12 @@ class AuthController {
       const [response, error] = await TokenService.saveRefreshToken(user._id, refreshToken)
       if (error) next(error)
 
-      return res
+      console.log('Access Token :>> ', accessToken)
+      console.log('Access maxAge :>> ', jwt.accessExp * 1000)
+      console.log('Access secure :>> ', env === 'production')
+      console.log('Refresh Token :>> ', response.token)
+      console.log('Refresh maxAge :>> ', jwt.refreshExp * 24 * 60 * 60 * 1000)
+      res
         .cookie('accessToken', accessToken, {
           maxAge: jwt.accessExp * 1000,
           httpOnly: true,
@@ -87,6 +92,8 @@ class AuthController {
         })
         .status(200)
         .send({ success: true, user })
+      console.log('res :>> ', res)
+      return
     } catch (error) {
       next(error)
     }
