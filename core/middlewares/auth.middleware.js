@@ -10,10 +10,12 @@ const authenticate =
     try {
       // Authorization başlığını kontrol et
       const authHeader = req.headers.authorization
+      console.log('req.headers :>> ', req.headers)
+      console.log('authHeader :>> ', authHeader)
+
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(status.UNAUTHORIZED).json({ message: 'Unauthorized' })
       }
-
       // Bearer token'ı ayır
       const token = authHeader.split(' ')[1]
       if (!token) {
