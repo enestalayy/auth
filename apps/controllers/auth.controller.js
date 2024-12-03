@@ -82,13 +82,13 @@ class AuthController {
           maxAge: jwt.accessExp * 1000,
           httpOnly: true,
           secure: env === 'production',
-          sameSite: 'lax', // Çapraz kaynak uyumluluğu için 'lax'
+          sameSite: 'Lax', // Çapraz kaynak uyumluluğu için 'Lax'
         })
         .cookie('refreshToken', response.token, {
           maxAge: jwt.refreshExp * 24 * 60 * 60 * 1000,
           httpOnly: true,
           secure: env === 'production',
-          sameSite: 'lax',
+          sameSite: 'Lax',
         })
         .status(200)
         .send({ success: true, user })
