@@ -72,7 +72,7 @@ class AuthController {
       const [response, error] = await TokenService.saveRefreshToken(user._id, refreshToken)
       if (error) next(error)
 
-      return res
+      const apiResponse = res
         .cookie('accessToken', accessToken, {
           maxAge: jwt.accessExp * 60 * 1000,
           httpOnly: true,
@@ -87,6 +87,9 @@ class AuthController {
         })
         .status(200)
         .send({ success: true, user })
+
+      console.log('apiResponse :>> ', apiResponse)
+      return
     } catch (error) {
       next(error)
     }

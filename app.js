@@ -8,7 +8,7 @@ const { apiKeyMiddleware } = require('~/middlewares/apiKey.middleware')
 const app = express()
 config(app)
 
-app.use(apiKeyMiddleware)
+// app.use(apiKeyMiddleware)
 
 // --- ROUTES ----
 const routes = require('@/routes')

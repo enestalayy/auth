@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const { status } = require('http-status')
-const { getUserById } = require('../services/user.service')
+const userService = require('../services/user.service')
 const { TokenTypes } = require('../config/enums')
 const config = require('../config/config')
 
@@ -10,8 +10,6 @@ const authenticate =
     try {
       // Authorization başlığını kontrol et
       const authHeader = req.headers.authorization
-      console.log('req.headers :>> ', req.headers)
-      console.log('authHeader :>> ', authHeader)
 
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(status.UNAUTHORIZED).json({ message: 'Unauthorized' })
@@ -21,9 +19,11 @@ const authenticate =
       if (!token) {
         return res.status(status.UNAUTHORIZED).json({ message: 'Unauthorized' })
       }
+      console.log('token :>> ', token)
       const payload = jwt.verify(token, config.jwt.secret)
-      const user = await getUserById(payload.sub)
-
+      console.log('payload :>> ', payload)
+      const user = await userService.getUserById(payload.sub)
+      console.log('user :>> ', user)
       if (requiredRoles.length && !requiredRoles.includes(user.role)) {
         return res.status(status.FORBIDDEN).json({ message: 'Forbidden' })
       }

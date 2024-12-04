@@ -23,6 +23,9 @@ class UserService extends BaseService {
     if (!user.isEmailVerified) return handleError(status.UNAUTHORIZED, next)
     return [user, error]
   }
+  async getUserById(userId) {
+    return await User.findById(userId)
+  }
 }
 
 module.exports = new UserService()
